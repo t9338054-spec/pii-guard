@@ -1,0 +1,9 @@
+__pycache__/
+.pytest_cache/
+*.pyc
+*.enc
+*.masked.*
+.build/
+.swiftpm/
+xcuserdata/
+.DS_Store
