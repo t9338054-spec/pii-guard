@@ -1,5 +1,7 @@
 # PII Guard for iPhone
 
+> Mac がなくても使える Web アプリ版が `web/` にあります(https://t9338054-spec.github.io/pii-guard/)。通常はそちらを使ってください。
+
 個人情報の**検出・マスク**と**ファイル暗号化**を、通信なし・端末内だけで行う SwiftUI アプリです(iOS 16 以上)。
 
 > **状態: 未ビルド・未テスト。** 開発環境が Windows で Swift/Xcode が無かったため、コンパイルも実行もしていません。

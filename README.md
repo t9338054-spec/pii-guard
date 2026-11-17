@@ -9,9 +9,28 @@
 | `pwcheck.py` | パスワードの強度判定と漏洩確認 |
 | `login_monitor.py` | ログイン履歴から乗っ取りの兆候を検出 |
 | `totp.py` | 認証アプリ方式 (TOTP, RFC 6238) の多要素認証 |
+| `web/` | **iPhone 用アプリ**(パスワード生成・個人情報チェック・暗号化メモ) |
 
 必要環境: Python 3.9 以上。暗号化機能のみ `pip install cryptography` が必要です。
 テスト: `pip install pytest` のあと `python -m pytest`
+
+## iPhone アプリ(web/)
+
+iPhone の Safari で **https://t9338054-spec.github.io/pii-guard/** を開き、共有ボタン →「ホーム画面に追加」で使えます。Mac や Xcode は不要で、一度開けばオフラインでも動きます。
+
+| タブ | 内容 |
+|---|---|
+| パスワード生成 | 長さ(8〜64)と文字種を選んで強いパスワードを作成。`crypto.getRandomValues` を偏りなく使用 |
+| 個人情報チェック | 貼り付けた文章から個人情報を検出・マスク。`pii_guard.py` と同じルールを `web/pii.js` に移植し、全角の英数字・記号にも対応 |
+| 暗号化メモ | PBKDF2-SHA256(60万回)+ AES-GCM 256bit で暗号化して端末内に保存。自動ロック、暗号化バックアップ/復元あり |
+
+- 通信は行いません(Content-Security-Policy で外部への接続を禁止)
+- マスターパスワードを忘れるとメモは復号できません。ホーム画面のアプリを削除するとメモも消えます
+- `main` の `web/` を更新すると GitHub Actions(`.github/workflows/pages.yml`)で自動公開されます。Settings → Pages の Source は「GitHub Actions」
+- テスト: `node --test tests/pii.test.js`
+- アイコン再生成: `python tools/make_icons.py web/icons`
+
+`ios/` の SwiftUI 版は未ビルドです。iPhone ではまず `web/` 版を使ってください。
 
 ## pii_guard
 

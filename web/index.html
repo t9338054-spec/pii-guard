@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="セキュリティ">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="style.css">
+  <title>セキュリティ</title>
+</head>
+<body>
+  <header class="top"><h1 id="title">パスワード生成</h1></header>
+
+  <main>
+    <!-- パスワード生成 -->
+    <section id="view-gen" class="view">
+      <div class="card">
+        <output id="pw" class="pw" aria-live="polite"></output>
+        <div class="strength"><div id="bar"></div></div>
+        <p id="entropy" class="muted"></p>
+        <div class="row">
+          <button id="regen" class="btn secondary" type="button">再生成</button>
+          <button id="copy" class="btn" type="button">コピー</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <label class="field">
+          <span>長さ <b id="lenval">20</b></span>
+          <input id="len" type="range" min="8" max="64" value="20">
+        </label>
+        <label class="toggle"><span>大文字 (A-Z)</span><input type="checkbox" id="upper" checked></label>
+        <label class="toggle"><span>小文字 (a-z)</span><input type="checkbox" id="lower" checked></label>
+        <label class="toggle"><span>数字 (0-9)</span><input type="checkbox" id="digits" checked></label>
+        <label class="toggle"><span>記号 (!@#…)</span><input type="checkbox" id="symbols" checked></label>
+        <label class="toggle"><span>紛らわしい文字を除く (0O1lI)</span><input type="checkbox" id="noamb"></label>
+      </div>
+    </section>
+
+    <!-- 個人情報チェック（pii-guard と同じルール） -->
+    <section id="view-pii" class="view" hidden>
+      <div class="card">
+        <p class="muted">文章を貼り付けると、メール・電話番号・カード番号・マイナンバー・住所などを見つけて隠します。内容はiPhoneの外に送信されません。</p>
+        <textarea id="pii-in" class="pii-in" placeholder="ここに文章を貼り付け" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
+        <button id="pii-clear" class="btn secondary" type="button">クリア</button>
+      </div>
+      <div id="pii-result" hidden>
+        <div class="card">
+          <p id="pii-summary"></p>
+          <ul id="pii-list" class="found"></ul>
+        </div>
+        <div class="card" id="pii-out-card">
+          <p><b>隠したあとの文章</b></p>
+          <pre id="pii-out" class="masked"></pre>
+          <button id="pii-copy" class="btn" type="button">隠したあとの文章をコピー</button>
+        </div>
+        <p class="muted">氏名・住所は簡易的な判定のため、見逃しや誤検出があります。送る前に目でも確認してください。</p>
+      </div>
+    </section>
+
+    <!-- 暗号化メモ -->
+    <section id="view-vault" class="view" hidden>
+      <form id="setup" class="card" hidden>
+        <p>メモを守るマスターパスワードを決めてください。</p>
+        <p class="warn">忘れるとメモは二度と開けません。どこにも送信されないため、復旧手段はありません。</p>
+        <input id="setup-pw" type="password" placeholder="マスターパスワード（10文字以上）" autocomplete="new-password" required>
+        <input id="setup-pw2" type="password" placeholder="もう一度入力" autocomplete="new-password" required>
+        <p id="setup-err" class="err"></p>
+        <button class="btn" type="submit">作成</button>
+        <button class="link" type="button" id="show-import">バックアップから復元</button>
+      </form>
+
+      <form id="unlock" class="card" hidden>
+        <p>🔒 ロック中</p>
+        <input id="unlock-pw" type="password" placeholder="マスターパスワード" autocomplete="current-password" required>
+        <p id="unlock-err" class="err"></p>
+        <button class="btn" type="submit">開く</button>
+      </form>
+
+      <div id="list" hidden>
+        <div class="row">
+          <button id="new-note" class="btn" type="button">＋ 新しいメモ</button>
+          <button id="lock" class="btn secondary" type="button">ロック</button>
+        </div>
+        <ul id="notes" class="notes"></ul>
+        <p id="empty" class="muted center">メモはまだありません</p>
+        <details class="card">
+          <summary>バックアップ・設定</summary>
+          <p class="muted">バックアップは暗号化されたままの文字列です。メモアプリなどに貼り付けて保管してください。</p>
+          <button id="export" class="btn secondary" type="button">バックアップをコピー</button>
+          <button id="reset-start" class="btn danger" type="button">すべてのメモを削除</button>
+          <div id="reset-confirm" hidden>
+            <p class="warn">本当に削除しますか？元に戻せません。</p>
+            <div class="row">
+              <button id="reset-cancel" class="btn secondary" type="button">やめる</button>
+              <button id="reset-do" class="btn danger" type="button">削除する</button>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <div id="editor" hidden>
+        <div class="row">
+          <button id="back" class="btn secondary" type="button">‹ 一覧</button>
+          <button id="del-note" class="btn danger" type="button">削除</button>
+        </div>
+        <div id="del-confirm" class="card" hidden>
+          <p class="warn">このメモを削除しますか？</p>
+          <div class="row">
+            <button id="del-cancel" class="btn secondary" type="button">やめる</button>
+            <button id="del-do" class="btn danger" type="button">削除する</button>
+          </div>
+        </div>
+        <input id="note-title" class="note-title" placeholder="タイトル" autocomplete="off">
+        <textarea id="note-body" placeholder="内容（自動で暗号化して保存されます）"></textarea>
+        <p id="save-state" class="muted"></p>
+      </div>
+
+      <form id="import" class="card" hidden>
+        <p>コピーしておいたバックアップを貼り付けてください。復元後は、バックアップ作成時のマスターパスワードで開きます。</p>
+        <textarea id="import-text" required></textarea>
+        <p id="import-err" class="err"></p>
+        <div class="row">
+          <button class="btn secondary" type="button" id="import-cancel">やめる</button>
+          <button class="btn" type="submit">復元</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <nav class="tabs">
+    <button data-tab="gen" class="active" type="button">🔑<span>パスワード生成</span></button>
+    <button data-tab="pii" type="button">🛡️<span>個人情報チェック</span></button>
+    <button data-tab="vault" type="button">🔒<span>暗号化メモ</span></button>
+  </nav>
+
+  <div id="toast" class="toast" hidden></div>
+  <script src="pii.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
